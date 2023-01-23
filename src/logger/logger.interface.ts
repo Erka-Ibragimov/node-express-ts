@@ -1,4 +1,4 @@
-import { Logger, BaseLogger } from "tslog";
+import { Logger } from "tslog";
 import { ILogObj } from "tslog/dist/types/interfaces";
 
 export interface ILogger {
