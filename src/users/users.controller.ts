@@ -6,7 +6,6 @@ import { ILogger } from '../logger/logger.interface';
 import { TYPES } from '../types';
 import 'reflect-metadata';
 import { IUsersController } from './users.interface';
-
 @injectable()
 export class UserController extends BaseController implements IUsersController {
 	constructor(@inject(TYPES.ILogger) private loggerService: ILogger) {
