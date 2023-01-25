@@ -20,7 +20,7 @@ export class UserController extends BaseController implements IUsersController {
 		super(loggerService);
 		this.bindRoutes([
 			{
-				path: '/register',
+				path: '/reg',
 				method: 'post',
 				func: this.register,
 				middlewares: [new ValidateMiddleware(UserRegisterDto)],
@@ -43,6 +43,6 @@ export class UserController extends BaseController implements IUsersController {
 		if (!result) {
 			return next(new HttpError(422, 'Такой пользователь уже существует'));
 		}
-		this.ok(res, { email: result.email });
+		this.ok(res, { email: result.email, name: result.name });
 	}
 }
