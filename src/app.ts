@@ -36,12 +36,12 @@ export class App {
 		this.app.use(this.exeptionFilter.catch.bind(this.exeptionFilter));
 	}
 
-	public async init(): Promise<void> {
+	public init(): void {
 		this.useBodyParser();
 		this.useRoutes();
 		this.useExeptionFilters();
 		this.server = this.app.listen(this.port, () => {
-			this.logger.log(`Listening on port ${this.port}`);
+			console.log(`Listening on port ${this.port}`);
 		});
 	}
 }

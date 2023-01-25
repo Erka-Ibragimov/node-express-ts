@@ -38,11 +38,12 @@ export class UserController extends BaseController implements IUsersController {
 		{ body }: Request<{}, {}, UserRegisterDto>,
 		res: Response,
 		next: NextFunction,
-	): Promise<User | null | void> {
-		const result = await this.userService.createUser(body);
-		if (!result) {
-			return next(new HttpError(422, 'Такой пользователь уже существует'));
+	): Promise<void> {
+		try {
+			const result = await this.userService.createUser(body);
+			this.ok(res, { name: result?.name, email: result?.email });
+		} catch (e: any) {
+			next(new HttpError(401, e.message));
 		}
-		this.ok(res, { email: result.email, name: result.name });
 	}
 }

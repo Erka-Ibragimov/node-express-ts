@@ -6,16 +6,27 @@ import { IUserService } from './user.service.interface';
 import 'reflect-metadata';
 import { IConfigService } from '../config/config.service.interface';
 import { TYPES } from '../types';
+import { IUserRepository } from './user.repository.interface';
+import { HttpError } from '../errors/http-error.class';
+import { UsersData } from './user.table';
 
 @injectable()
 export class UserService implements IUserService {
-	constructor(@inject(TYPES.ConfigService) private configService: IConfigService) {}
+	constructor(
+		@inject(TYPES.ConfigService) private configService: IConfigService,
+		@inject(TYPES.UserRepository) private userRepository: IUserRepository,
+	) {}
 
-	async createUser({ email, name, password }: UserRegisterDto): Promise<User | null> {
-		const user = new User(email, name);
-		const salt = this.configService.get('SALT');
-		await user.setPassword(password, +salt);
-		return user;
+	async createUser({ email, name, password }: UserRegisterDto): Promise<UsersData | null> {
+		try {
+			const user = new User(email, name);
+			const salt = this.configService.get('SALT');
+			await user.setPassword(password, +salt);
+			const newUser = await this.userRepository.action(user);
+			return newUser;
+		} catch (e: any) {
+			throw new HttpError(400, e.message);
+		}
 	}
 
 	async validateUser(dto: UserLoginDto): Promise<boolean> {
