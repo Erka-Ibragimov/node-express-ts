@@ -24,12 +24,25 @@ export class UserService implements IUserService {
 			await user.setPassword(password, +salt);
 			const newUser = await this.userRepository.action(user);
 			return newUser;
-		} catch (e: any) {
-			throw new HttpError(400, e.message);
+		} catch (e: unknown) {
+			if (e instanceof HttpError) {
+				throw new HttpError(400, e.message);
+			} else {
+				throw new Error('Ошибка сервера');
+			}
 		}
 	}
 
-	async validateUser(dto: UserLoginDto): Promise<boolean> {
-		return true;
+	async validateUser({ email, password }: UserLoginDto): Promise<UsersData | null> {
+		try {
+			const check = await this.userRepository.findUser(email, password);
+			return check;
+		} catch (e: unknown) {
+			if (e instanceof HttpError) {
+				throw new HttpError(400, e.message);
+			} else {
+				throw new Error('Ошибка сервера');
+			}
+		}
 	}
 }

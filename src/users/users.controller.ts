@@ -29,9 +29,21 @@ export class UserController extends BaseController implements IUsersController {
 		]);
 	}
 
-	login(req: Request<{}, {}, UserLoginDto>, res: Response, next: NextFunction): void {
-		console.log(req.body);
-		next(new HttpError(401, 'Ошибка авторизации'));
+	async login(
+		{ body }: Request<{}, {}, UserLoginDto>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const result = await this.userService.validateUser(body);
+			this.ok(res, { email: result?.email, name: result?.name });
+		} catch (e: unknown) {
+			if (e instanceof HttpError) {
+				return next(new HttpError(401, e.message));
+			} else {
+				return next(new Error('Ошибка сервера'));
+			}
+		}
 	}
 
 	async register(
@@ -42,8 +54,12 @@ export class UserController extends BaseController implements IUsersController {
 		try {
 			const result = await this.userService.createUser(body);
 			this.ok(res, { name: result?.name, email: result?.email });
-		} catch (e: any) {
-			next(new HttpError(401, e.message));
+		} catch (e: unknown) {
+			if (e instanceof HttpError) {
+				return next(new HttpError(401, e.message));
+			} else {
+				return next(new Error('Ошибка сервера'));
+			}
 		}
 	}
 }
