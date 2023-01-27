@@ -8,14 +8,17 @@ import 'reflect-metadata';
 import { IUsersController } from './users.interface';
 import { UserLoginDto } from './dto/user-login.dto';
 import { UserRegisterDto } from './dto/user-register.dto';
-import { User } from './user.entity';
-import { UserService } from './user.service';
 import { ValidateMiddleware } from '../common/validate.middleware';
+import { sign } from 'jsonwebtoken';
+import { IUserService } from './user.service.interface';
+import { IConfigService } from '../config/config.service.interface';
+import { AuthGuard } from '../common/auth.guard';
 @injectable()
 export class UserController extends BaseController implements IUsersController {
 	constructor(
 		@inject(TYPES.ILogger) private loggerService: ILogger,
-		@inject(TYPES.UserService) private userService: UserService,
+		@inject(TYPES.UserService) private userService: IUserService,
+		@inject(TYPES.ConfigService) private configService: IConfigService,
 	) {
 		super(loggerService);
 		this.bindRoutes([
@@ -25,7 +28,18 @@ export class UserController extends BaseController implements IUsersController {
 				func: this.register,
 				middlewares: [new ValidateMiddleware(UserRegisterDto)],
 			},
-			{ path: '/login', method: 'post', func: this.login },
+			{
+				path: '/login',
+				method: 'post',
+				func: this.login,
+				middlewares: [new ValidateMiddleware(UserLoginDto)],
+			},
+			{
+				path: '/info',
+				method: 'get',
+				func: this.info,
+				middlewares: [new AuthGuard()],
+			},
 		]);
 	}
 
@@ -36,7 +50,8 @@ export class UserController extends BaseController implements IUsersController {
 	): Promise<void> {
 		try {
 			const result = await this.userService.validateUser(body);
-			this.ok(res, { email: result?.email, name: result?.name });
+			const jwt = await this.signJWT(body.email, this.configService.get('SECRET'));
+			this.ok(res, { email: result?.email, name: result?.name, jwt: jwt });
 		} catch (e: unknown) {
 			if (e instanceof HttpError) {
 				return next(new HttpError(401, e.message));
@@ -61,5 +76,30 @@ export class UserController extends BaseController implements IUsersController {
 				return next(new Error('Ошибка сервера'));
 			}
 		}
+	}
+
+	info({ user }: Request, res: Response, next: NextFunction) {
+		this.ok(res, { email: user });
+	}
+
+	private signJWT(email: string, secret: string): Promise<string> {
+		return new Promise<string>((resolve, reject) => {
+			sign(
+				{
+					email,
+					iat: Math.floor(Date.now() / 10000),
+				},
+				secret,
+				{
+					algorithm: 'HS256',
+				},
+				(err, token) => {
+					if (err) {
+						reject(err);
+					}
+					resolve(token as string);
+				},
+			);
+		});
 	}
 }

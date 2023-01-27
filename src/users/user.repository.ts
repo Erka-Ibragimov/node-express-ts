@@ -32,7 +32,7 @@ export class UserRepositoty implements IUserRepository {
 		if (!foundUser) {
 			throw new HttpError(401, `Такой пользователь ${email} не найден`);
 		}
-		const user = new User(email, 'a');
+		const user = new User(email, foundUser.name);
 		const checkPass = await user.checkPass(password, foundUser.password);
 		if (!checkPass) {
 			throw new HttpError(401, `Не верный пароль`);
